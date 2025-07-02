@@ -30,7 +30,7 @@ module tt_um_top (
     // 2 Buttons
     // input wire [1:0] btn, // No longer needed
     // DS18B20 1-Wire Data
-    inout wire ds18b20_dq
+    inout wire ds18b20_dq,
 
     input wire ena
 );
