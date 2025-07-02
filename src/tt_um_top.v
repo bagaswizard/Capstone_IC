@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module top (
+module tt_um_top (
     // 12MHz System Clock
     input wire clk,
     // RGB LED (Active Low)
