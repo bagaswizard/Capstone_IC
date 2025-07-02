@@ -33,6 +33,7 @@ module tt_um_top (
     inout wire ds18b20_dq,
 
     input wire ena,
+    input wire ui_in,
     input wire rst_n
 );
     localparam CD_COUNT_MAX = 12000000/2;
