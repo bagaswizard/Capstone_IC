@@ -13,8 +13,12 @@ Interface with ds18b20 and sends the data through uart
 
 ## How to test
 
-Explain how to use your project
-
+1. Connect the ds18b20 sensor to your device as described in the hardware section.
+2. Power on the device and ensure the UART connection is properly configured.
+3. Run the main application code.
+4. Observe the UART output for temperature readings from the ds18b20 sensor.
+5. Verify that the readings update as the temperature changes.
+   
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+There is ds18b20 sensor and micro usb port for uart
