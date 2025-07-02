@@ -23,7 +23,20 @@ module tb ();
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
 
-  // Replace tt_um_example with your module name:
+  // Map pins from the tt_um_top module to the testbench signals
+  assign clk = ui_in[0];
+  wire tx = uo_out[0];
+  wire led0_r = uo_out[1];
+  wire led0_g = uo_out[2];
+  wire led0_b = uo_out[3];
+  wire [3:0] led = uo_out[7:4];
+  wire ds18b20_dq;
+
+  // Handle bidirectional pin for ds18b20_dq
+  assign ds18b20_dq = uio_oe[0] ? uio_out[0] : 1'bz;
+  assign uio_in[0] = ds18b20_dq;
+
+  // Instantiate the tt_um_top module
   tt_um_top user_project (
       .ui_in  (ui_in),    // Dedicated inputs
       .uo_out (uo_out),   // Dedicated outputs
