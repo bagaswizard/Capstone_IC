@@ -30,11 +30,7 @@ module tt_um_top (
     // 2 Buttons
     // input wire [1:0] btn, // No longer needed
     // DS18B20 1-Wire Data
-    inout wire ds18b20_dq,
-
-    input wire ena,
-    input [7:0] ui_in,
-    input wire rst_n
+    inout wire ds18b20_dq
 );
     localparam CD_COUNT_MAX = 12000000/2;
     localparam UART_PERIOD_CLOCKS = 12000000; // 1 second period
