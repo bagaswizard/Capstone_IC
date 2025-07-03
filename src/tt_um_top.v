@@ -50,10 +50,11 @@ module tt_um_top (
     // Map inout ds18b20_dq to uio bidirectional port 0
     // The ds18b20_dri module drives ds18b20_dq when it needs to write,
     // and leaves it high-Z when it needs to read.
-    assign ds18b20_dq = uio_in[0];
     assign uio_out[0] = ds18b20_dq;
     // The output enable is 1 when the ds18b20_dq wire is being driven (not Z).
     assign uio_oe[0] = (ds18b20_dq !== 1'bz);
+    // When the pin is not driven by this module, read the value from the input.
+    assign ds18b20_dq = (uio_oe[0] == 1'b0) ? uio_in[0] : 1'bz;
 
     // Set other uio ports as inputs
     assign uio_out[7:1] = 8'h00;
