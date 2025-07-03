@@ -33,9 +33,11 @@ module tt_um_top (
     wire led0_b;
     wire [3:0] led;
     wire tx;
-    wire ds18b20_dq;
-    wire ds18b20_dq_out;
-    wire ds18b20_dq_oe;
+    wire ds18b20_dq; // This wire connects to the inout port of the sensor module
+
+    // The ds18b20_dq_out and ds18b20_dq_oe signals are no longer needed
+    // wire ds18b20_dq_out;
+    // wire ds18b20_dq_oe;
 
     // Map outputs to uo_out
     // uo_out[0] = led0_r
@@ -46,9 +48,13 @@ module tt_um_top (
     assign uo_out = {tx, led, led0_b, led0_g, led0_r};
 
     // Map inout ds18b20_dq to uio bidirectional port 0
+    // The ds18b20_dri module drives ds18b20_dq when it needs to write,
+    // and leaves it high-Z when it needs to read.
     assign ds18b20_dq = uio_in[0];
-    assign uio_out[0] = ds18b20_dq_out;
-    assign uio_oe[0] = ds18b20_dq_oe;
+    assign uio_out[0] = ds18b20_dq;
+    // The output enable is 1 when the ds18b20_dq wire is being driven (not Z).
+    assign uio_oe[0] = (ds18b20_dq !== 1'bz);
+
     // Set other uio ports as inputs
     assign uio_out[7:1] = 8'h00;
     assign uio_oe[7:1] = 8'h00;
@@ -108,11 +114,9 @@ module tt_um_top (
     ds18b20_dri m_ds18b20 (
         .clk(clk),          // 12MHz clock
         .rst_n(rst_n),
-        .dq_in(ds18b20_dq),
-        .dq_out(ds18b20_dq_out),
-        .dq_oe(ds18b20_dq_oe),
+        .dq(ds18b20_dq),       // Connect to the single inout pin
         .temp_data(uart_data), // Output temperature data to uart_data wire
-        .sign(ds18b20_sign) // Temperature sign bit
+        .sign(ds18b20_sign)    // Temperature sign bit
     );
 
     // Transmit temperature data periodically
