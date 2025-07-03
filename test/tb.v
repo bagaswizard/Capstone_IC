@@ -23,7 +23,7 @@ module tb ();
   wire ds18b20_dq;
 
   // Instantiate the top module
-  top user_project (
+  tt_um_top tt_um_top (
       .clk(clk),
       .led0_r(led0_r),
       .led0_g(led0_g),
