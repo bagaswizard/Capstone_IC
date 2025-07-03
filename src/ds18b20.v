@@ -1,10 +1,9 @@
-
 // Descriptions:        DS18B20驱动模块--ep3c25q24
 //****************************************************************************************//
 
 module ds18b20_dri(
     //module clock
-    input              clk        ,         // 时钟信号（24MHz）
+    input              clk        ,         // 时钟信号（12MHz）
     input              rst_n      ,         // 复位信号
 
     //user interface
@@ -44,7 +43,8 @@ reg     [ 3:0]         cmd_cnt     ;        // 发送命令计数
 reg                    init_done   ;        // 初始化完成信号
 reg                    st_done     ;        // 完成信号
 reg                    cnt_1us_en  ;        // 使能计时
-reg                    dq_out      ;        // DS18B20的dq输出
+reg                    dq_o        ;        // DS18B20的dq输出数据
+reg                    dq_oe       ;        // DS18B20的dq输出使能
 
 //wire define
 wire    [19:0]         data2       ;        // 对处理后的进行转换处理
@@ -53,7 +53,7 @@ wire    [19:0]         data2       ;        // 对处理后的进行转换处理
 //**                    main code
 //*****************************************************
 
-assign dq = dq_out;
+assign dq = dq_oe ? dq_o : 1'bz;
 
 //分频生成1MHz的时钟信号
 always @ (posedge clk or negedge rst_n) begin
@@ -152,7 +152,8 @@ always @ (posedge clk_1us or negedge rst_n) begin
         flow_cnt     <=  4'b0;
         init_done    <=  1'b0;
         cnt_1us_en   <=  1'b1;
-        dq_out       <=  1'bZ;
+        dq_o         <=  1'b1;
+        dq_oe        <=  1'b0;
         st_done      <=  1'b0;
         rd_data      <= 16'b0;
         rd_cnt       <=  5'd0;
@@ -166,21 +167,23 @@ always @ (posedge clk_1us or negedge rst_n) begin
                 init_done <= 1'b0;
                 case(flow_cnt)
                     4'd0:
-						flow_cnt <= flow_cnt + 1'b1;
-						4'd1: begin					//发出500us复位脉冲
+                        flow_cnt <= flow_cnt + 1'b1;
+                        4'd1: begin					//发出500us复位脉冲
                         cnt_1us_en <= 1'b1;         
-                        if(cnt_1us < 20'd500)
-                            dq_out <= 1'b0;         
+                        if(cnt_1us < 20'd500) begin
+                            dq_o <= 1'b0;
+                            dq_oe <= 1'b1;
+                        end         
                         else begin
                             cnt_1us_en <= 1'b0;
-                            dq_out <= 1'bz;
+                            dq_oe <= 1'b0;
                             flow_cnt <= flow_cnt + 1'b1;
                         end
                     end
                     4'd2:begin						//释放总线，等待30us
                         cnt_1us_en <= 1'b1;
                         if(cnt_1us < 20'd30)
-                            dq_out <= 1'bz;
+                            dq_oe <= 1'b0;
                         else
                             flow_cnt <= flow_cnt + 1'b1;
                     end
@@ -211,7 +214,8 @@ always @ (posedge clk_1us or negedge rst_n) begin
                 if(wr_cnt <= 4'd7) begin
                     case (flow_cnt)
                         4'd0: begin
-                            dq_out <= 1'b0;			//拉低数据线，开始写操作
+                            dq_o <= 1'b0;			//拉低数据线，开始写操作
+                            dq_oe <= 1'b1;
                             cnt_1us_en <= 1'b1;		//启动计时器
                             flow_cnt <= flow_cnt + 1'b1;
                         end
@@ -219,10 +223,12 @@ always @ (posedge clk_1us or negedge rst_n) begin
                             flow_cnt <= flow_cnt + 1'b1;
                         end
                         4'd2: begin
-                            if(cnt_1us < 20'd60)	//发送数据
-                                dq_out <= wr_data[wr_cnt];
+                            if(cnt_1us < 20'd60) begin	//发送数据
+                                dq_o <= wr_data[wr_cnt];
+                                dq_oe <= 1'b1;
+                            end
                             else if(cnt_1us < 20'd63) 	
-                                dq_out <= 1'bz;		//释放总线（发送间隔）
+                                dq_oe <= 1'b0;		//释放总线（发送间隔）
                             else
                                 flow_cnt <= flow_cnt + 1'b1;
                         end
@@ -262,11 +268,12 @@ always @ (posedge clk_1us or negedge rst_n) begin
                     case(flow_cnt)
                         4'd0: begin
                             cnt_1us_en <= 1'b1;
-                            dq_out <= 1'b0;			//拉低数据线，开始读操作
+                            dq_o <= 1'b0;			//拉低数据线，开始读操作
+                            dq_oe <= 1'b1;
                             flow_cnt <= flow_cnt + 1'b1;
                         end
                         4'd1: begin
-                            dq_out <= 1'bz;			//释放总线并在15us内接收数据
+                            dq_oe <= 1'b0;			//释放总线并在15us内接收数据
                             if(cnt_1us == 20'd14) begin
                                 rd_data <= {dq,rd_data[15:1]};
                                 flow_cnt <= flow_cnt + 1'b1 ;
@@ -274,7 +281,7 @@ always @ (posedge clk_1us or negedge rst_n) begin
                         end
                         4'd2: begin
                             if (cnt_1us <= 20'd64)	//读1位数据结束
-                                dq_out <= 1'bz;
+                                dq_oe <= 1'b0;
                             else begin
                                 flow_cnt <= 4'd0;	
                                 rd_cnt <= rd_cnt + 1'b1;//读计数器加1
